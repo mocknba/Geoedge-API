@@ -1,0 +1,92 @@
+#! python3
+# geoedgeAPI.py
+#	This program will scrape Geoedge bRealTime API data and return IDs of all active projects
+
+import json
+import urllib
+import urllib.request
+import urllib.response
+import urllib.error
+
+# auth with geoedge
+apiKey = # removed private
+apiURL = 'https://api.geoedge.com/rest/analytics/v3'
+
+# builds requests
+opener = urllib.request.build_opener(urllib.request.HTTPHandler)
+request = urllib.request.Request(apiURL + '/projects?offset=0&limit=300')
+
+request.add_header('Authorization', apiKey)
+request.get_method = lambda: 'GET'
+
+try:
+    response = opener.open(request)
+    responseText = response.read()
+    response.close()
+
+except urllib.error.HTTPError:
+    responseText = error.read()
+
+# format to json
+projects_json = json.loads(responseText)
+
+# specify list values
+projects = projects_json['response']['projects']
+
+# grab list of all active IDs to object
+ids = [x['id'] for x in projects]
+
+if projects:
+    print('Pinging Geoedge for project information...')
+
+id_projects = []
+# ping API again for each geoedge project. grab ids
+for x in ids:
+    id_request = urllib.request.Request(apiURL + '/projects/' + x)
+    id_request.add_header('Authorization', apiKey)
+    id_request.get_method = lambda: 'GET'
+
+    try:
+        id_response = opener.open(id_request)
+        id_responseText = id_response.read()
+        id_response.close()
+
+    except urllib.request.HTTPError:
+        id_responseText = error.read()
+
+    ids = json.loads(id_responseText)
+    id_projects.append(ids)
+
+# grab values from list
+
+response = [x['response'] for x in id_projects]
+project = [x['project'] for x in response]
+ids, names, times = [],[],[]
+
+# creates list of projects and do not include projects that are inactive. print them out for user.
+for x in project:
+    if x['auto_scan'] == 0:
+        print('Geoedge project is inactive and not included in totals: ' + x['name'])
+    else:
+        ids.append(x['id'])
+        names.append(x['name'])
+        times.append(x['times_per_day'])
+
+# calculate totals
+monthly_scans = 220000
+total_scans = sum(times)
+projected_monthly = total_scans * 30
+total_left = monthly_scans - total_scans
+
+# loop through project list and print names with ID
+for i in range(0,len(ids)):
+    print('Geoedge Name and ID is: ' + str(names[i]) + str(ids[i]) + '  .......  scheduled scans per day: ' + str(times[i]))
+
+# print results of geoedge project totals
+print(str("{:,d}".format(total_scans)) + ' scheduled daily Geoedge scans')
+print(str("{:,d}".format(total_left)) + ' scans left before hitting the next cost tier.')
+print(str("{:,d}".format(projected_monthly)) + ' projected scans for the month.')
+
+#print warning if we're projected to exceed scans
+if projected_monthly > monthly_scans:
+    print('***WARNING*** Geoedge is projected to overspend into the next tier.')
