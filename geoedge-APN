@@ -1,0 +1,11 @@
+# grab #s from project names. ping appnexus api and confirm if live
+
+import re
+
+project_name = 'Coolmath TestPage_5_NoTop_300 Biddr  Mobile 5565466'
+idRegex = re.compile(r'\s\d+')
+
+apn_id = idRegex.search(project_name)
+apn_id2 = apn_id.group()
+
+print('this is it: '+apn_id2.strip())
