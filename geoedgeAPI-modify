@@ -1,0 +1,54 @@
+#! python3
+# geoedgeAPI-modify.py
+#	This program will modify active Geoedge bRealTime projects.
+
+import urllib
+import urllib.request
+import urllib.response
+import urllib.parse
+import urllib.error
+
+# auth with geoedge
+apiKey = 'd88ab7e7bafcc2d0900024d3fb0b78a1'
+apiURL = 'https://api.geoedge.com/rest/analytics/v3'
+
+# get inputs from user
+print('Please enter the project name... ')
+geo_name = input()
+print('Please enter the project id... ')
+geo_id = input()
+print('Please enter how many scans per day (1, 2, 3, 4, 6, 8, 12, 24, 48, 72, 96, 120, 144, 168, 192, 216, 240, 480, 720)')
+geo_times = int(input())
+scan_list = [1, 2, 3, 4, 6, 8, 12, 24, 48, 72, 96, 120, 144, 168, 192, 216, 240, 480, 720]
+
+# check that scans entered matches values in geoedge
+def scan_lister(num, list):
+    while num not in list:
+        print('Please enter how many scans per day (1, 2, 3, 4, 6, 8, 12, 24, 48, 72, 96, 120, 144, 168, 192, 216, 240, 480, 720)')
+        num = int(input())
+scan_lister(geo_times, scan_list)
+
+# create push data for request
+geo_post = {}
+geo_post['name'] = geo_name
+geo_post['times_per_day'] = str(geo_times)
+
+postData = urllib.parse.urlencode(geo_post)
+postData = postData.encode('ascii')
+
+# builds requests
+opener = urllib.request.build_opener(urllib.request.HTTPHandler)
+request = urllib.request.Request(apiURL + '/projects/' + geo_id, postData)
+
+request.add_header('Authorization', apiKey)
+request.get_method = lambda: 'PUT'
+
+# send request to geoedge
+try:
+    response = opener.open(request)
+    responseText = response.read()
+    response.close()
+except urllib.error.HTTPError as error:
+    responseText = error.read()
+
+print(responseText)
